@@ -1,7 +1,7 @@
 """Stage 2 · Interpretable Feature Engineering (`pipeline/features.py`).
 
 Synthesized by sovLoop (Model: qwen3.5:9b)
-Active Operations: passthrough
+Active Operations: row_summary_stats
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-ACTIVE_FEATURE_OPS: tuple[str, ...] = ()
+ACTIVE_FEATURE_OPS: tuple[str, ...] = ('row_summary_stats',)
 PRIORITY_SIGNAL_COLUMNS: list[str] = ['target_lag_168h', 'target_lag_mean_4', 'target_lag_336h', 'target_lag_48h', 'target_lag_96h', 'hw_shortwave_radiation']
 
 
@@ -27,7 +27,10 @@ def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
             if len(fallback_cols) >= 4:
                 break
 
-    # Passthrough: no extra engineered columns
+    # Row-wise summary moments across predictors
+    if fallback_cols:
+        out['row_numeric_mean'] = out[fallback_cols].mean(axis=1)
+        out['row_numeric_std'] = out[fallback_cols].std(axis=1).fillna(0.0)
 
     return out.replace([np.inf, -np.inf], 0.0).fillna(0.0)
 
